@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: miunave-backend
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: node backend.cjs
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: "http://localhost:5173"
+      - key: NPM_CONFIG_BUILD_FROM_SOURCE
+        value: "false"
