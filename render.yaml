@@ -1,7 +1,7 @@
 services:
   - type: web
     name: miunave-backend
-    env: node
+    runtime: node
     plan: free
     region: frankfurt
     buildCommand: npm install

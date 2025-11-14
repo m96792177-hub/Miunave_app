@@ -1,7 +1,8 @@
 {
-  "name": "mi-proyecto",
+  "name": "miunave-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "MiuNave - Aplicación de música React con backend Node.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
