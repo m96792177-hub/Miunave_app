@@ -68,7 +68,6 @@ npm run dev
 
 - `USAGE_GUIDE.md` - Guía completa de uso
 - `DEPLOYMENT_SUCCESS.md` - Info de despliegue
-- `DEPLOYMENT_CHECKLIST.md` - Checklist entrega
 
 ---
 
