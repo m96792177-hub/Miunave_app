@@ -43,7 +43,7 @@ const allowedOrigins = [...defaultOrigins, ...envOrigins];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // llamadas server-to-server o curl
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error('Origen no permitido por CORS'));
   },
@@ -136,7 +136,6 @@ app.get('/api/admin/secret', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ secret: 'Solo admins pueden ver esto', user: req.user });
 });
 
-// Endpoint de salud para monitor y pruebas en hosting
 app.get('/api/health', (req, res) => {
   try {
     const countRow = db.prepare('SELECT COUNT(*) AS total FROM users').get();

@@ -1,7 +1,5 @@
-// Helper para centralizar la URL del backend y fetch con credenciales
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 
-// Auto-detecta el entorno y configura la URL del backend
 export const API_URL = (
   import.meta?.env?.VITE_API_URL && import.meta.env.VITE_API_URL.trim()
 ) || (isLocalhost ? 'http://localhost:4000' : 'https://miunave-backend.onrender.com');
