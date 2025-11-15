@@ -1,19 +1,19 @@
-const API_URL_FORCED = 'http://localhost:4000';
-export const API_URL = API_URL_FORCED;
+const isBrowser = typeof window !== 'undefined';
+const hostname = isBrowser ? window.location.hostname : '';
+const envUrl = (import.meta?.env?.VITE_API_URL || '').trim();
+const defaultUrl = hostname === 'localhost' || hostname === '127.0.0.1'
+  ? 'http://localhost:4000'
+  : 'https://miunave-backend.onrender.com';
 
-const TIMESTAMP = new Date().getTime();
-console.log('Archivo api.js cargado - timestamp:', TIMESTAMP);
-console.log('API_URL configurada:', API_URL_FORCED);
-console.log('Usando backend local forzado');
-console.log('Si ves este mensaje, el cache está limpio');
+export const API_URL = envUrl || defaultUrl;
 
-window.API_URL_DEBUG = API_URL_FORCED;
+if (isBrowser) {
+  window.API_URL_DEBUG = API_URL;
+  console.log('[api] URL activa:', API_URL);
+}
 
 export async function apiFetch(path, options = {}) {
-  const url = `${API_URL_FORCED}${path}`;
-  console.log('Realizando fetch a:', url);
-  console.log('Método de fetch:', options.method || 'GET');
-  console.log('Timestamp fetch:', new Date().getTime());
+  const url = `${API_URL}${path}`;
   const resp = await fetch(url, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },

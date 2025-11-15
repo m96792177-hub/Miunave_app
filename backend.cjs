@@ -50,7 +50,11 @@ db.prepare(`CREATE TABLE IF NOT EXISTS playlist_songs (
 app.use(express.json());
 app.use(cookieParser());
 
-const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://fantastic-haupia-47b632.netlify.app'
+];
 const envOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(s => s.trim())

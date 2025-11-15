@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./styles.css";
 import Auth from "./components/Auth";
 import PlaylistManager from "./components/PlaylistManager";
-import { apiFetch } from "./api";
+import { apiFetch, API_URL } from "./api";
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(localStorage.getItem("tema") === "oscuro");
@@ -39,13 +39,11 @@ export default function App() {
 
   const loadUserPlaylists = async () => {
     try {
-      const res = await fetch('http://localhost:4000/api/playlists', {
-        credentials: 'include'
-      });
+      const res = await apiFetch('/api/playlists');
       if (res.ok) {
         const playlists = await res.json();
         setUserPlaylists(playlists);
-        console.log('Playlists cargadas:', playlists.length);
+        console.log('Playlists cargadas desde', API_URL, ':', playlists.length);
       } else {
         console.warn('Error cargando playlists:', res.status, res.statusText);
         setUserPlaylists([]);
@@ -70,9 +68,8 @@ export default function App() {
   useEffect(() => {
     const verifyUser = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/verify', {
-          credentials: 'include'
-        });
+        console.log('Verificando sesión contra:', API_URL);
+        const res = await apiFetch('/api/verify');
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
@@ -142,7 +139,7 @@ export default function App() {
     try {
       console.log('Iniciando creación de playlist:', name);
       console.log('Usuario actual:', user);
-      console.log('API URL actual:', 'http://localhost:4000');
+      console.log('API URL actual:', API_URL);
       console.log('Datos a enviar:', JSON.stringify({ name }));
       
       if (!user) {
@@ -155,15 +152,13 @@ export default function App() {
         return null;
       }
 
-      const response = await fetch('http://localhost:4000/api/playlists', {
+      const response = await apiFetch('/api/playlists', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
       });
       
       console.log('Respuesta del servidor:', response.status, response.statusText);
-      console.log('URL de la petición:', 'http://localhost:4000/api/playlists');
+      console.log('URL de la petición:', `${API_URL}/api/playlists`);
       
       if (response.ok) {
         const newPlaylist = await response.json();
@@ -205,7 +200,7 @@ export default function App() {
     try {
       console.log('Agregando canción a playlist:', { playlistId, songTitle });
       console.log('Usuario actual:', user);
-      console.log('API URL actual:', 'http://localhost:4000');
+      console.log('API URL actual:', API_URL);
       console.log('Datos a enviar:', JSON.stringify({ songTitle: songTitle.trim() }));
 
       if (!user) {
@@ -228,15 +223,13 @@ export default function App() {
         return false;
       }
 
-      const response = await fetch(`http://localhost:4000/api/playlists/${playlistId}/songs`, {
+      const response = await apiFetch(`/api/playlists/${playlistId}/songs`, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ songTitle: songTitle.trim() })
       });
       
       console.log('Respuesta del servidor (agregar canción):', response.status, response.statusText);
-      console.log('URL de la petición:', `http://localhost:4000/api/playlists/${playlistId}/songs`);
+      console.log('URL de la petición:', `${API_URL}/api/playlists/${playlistId}/songs`);
       
       if (response.ok) {
         const result = await response.json();
