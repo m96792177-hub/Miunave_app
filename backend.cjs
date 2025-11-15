@@ -31,6 +31,22 @@ db.prepare(`CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`).run();
 
+db.prepare(`CREATE TABLE IF NOT EXISTS playlists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id)
+)`).run();
+
+db.prepare(`CREATE TABLE IF NOT EXISTS playlist_songs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  playlist_id INTEGER NOT NULL,
+  song_path TEXT NOT NULL,
+  added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (playlist_id) REFERENCES playlists (id) ON DELETE CASCADE
+)`).run();
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -112,6 +128,15 @@ app.get('/api/verify', (req, res) => {
   }
 });
 
+app.get('/api/chat-users', requireAuth, (req, res) => {
+  try {
+    const users = db.prepare('SELECT id, username FROM users WHERE id != ?').all(req.user.id);
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 function requireAuth(req, res, next) {
   try {
     const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ','');
@@ -134,6 +159,109 @@ function requireRole(role) {
 
 app.get('/api/admin/secret', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ secret: 'Solo admins pueden ver esto', user: req.user });
+});
+
+app.get('/api/playlists', requireAuth, (req, res) => {
+  try {
+    const playlists = db.prepare(`
+      SELECT p.*, 
+             COUNT(ps.id) as song_count
+      FROM playlists p 
+      LEFT JOIN playlist_songs ps ON p.id = ps.playlist_id 
+      WHERE p.user_id = ? 
+      GROUP BY p.id 
+      ORDER BY p.created_at DESC
+    `).all(req.user.id);
+    res.json(playlists);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/playlists', requireAuth, (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Nombre de playlist requerido' });
+    }
+    const info = db.prepare('INSERT INTO playlists (name, user_id) VALUES (?, ?)')
+      .run(name.trim(), req.user.id);
+    const playlist = db.prepare('SELECT * FROM playlists WHERE id = ?').get(info.lastInsertRowid);
+    res.json(playlist);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/playlists/:id/songs', requireAuth, (req, res) => {
+  try {
+    const playlist = db.prepare('SELECT * FROM playlists WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id);
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist no encontrada' });
+    }
+    const songs = db.prepare('SELECT * FROM playlist_songs WHERE playlist_id = ? ORDER BY added_at')
+      .all(req.params.id);
+    res.json({ playlist, songs });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/playlists/:id/songs', requireAuth, (req, res) => {
+  try {
+    const { songTitle } = req.body;
+    const playlist = db.prepare('SELECT * FROM playlists WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id);
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist no encontrada' });
+    }
+    const info = db.prepare('INSERT INTO playlist_songs (playlist_id, song_path) VALUES (?, ?)')
+      .run(req.params.id, songTitle);
+    const song = db.prepare('SELECT * FROM playlist_songs WHERE id = ?').get(info.lastInsertRowid);
+    res.json(song);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/playlists/:id/songs', requireAuth, (req, res) => {
+  try {
+    const playlist = db.prepare('SELECT * FROM playlists WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id);
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist no encontrada' });
+    }
+    const songs = db.prepare('SELECT * FROM playlist_songs WHERE playlist_id = ?')
+      .all(req.params.id);
+    res.json(songs);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/playlists/:id', requireAuth, (req, res) => {
+  try {
+    const result = db.prepare('DELETE FROM playlists WHERE id = ? AND user_id = ?')
+      .run(req.params.id, req.user.id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Playlist no encontrada' });
+    }
+    res.json({ message: 'Playlist eliminada' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Obtener lista de usuarios para chat
+app.get('/api/users', requireAuth, (req, res) => {
+  try {
+    const users = db.prepare('SELECT id, username, email FROM users WHERE id != ?')
+      .all(req.user.id);
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/health', (req, res) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "./styles.css";
 import Auth from "./components/Auth";
+import PlaylistManager from "./components/PlaylistManager";
 import { apiFetch } from "./api";
 
 export default function App() {
@@ -12,6 +13,9 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [isReproductorMinimized, setIsReproductorMinimized] = useState(false);
   const [user, setUser] = useState(null);
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [chatUsers, setChatUsers] = useState([]);
+  const [showPlaylistManager, setShowPlaylistManager] = useState(false);
 
   useEffect(() => {
     const verifyUser = async () => {
@@ -20,16 +24,107 @@ export default function App() {
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
+          loadUserPlaylists();
+          loadChatUsers();
         } else {
           setUser(null);
+          setUserPlaylists([]);
+          setChatUsers([]);
         }
       } catch (error) {
         console.error('Error verificando usuario:', error);
         setUser(null);
+        setUserPlaylists([]);
+        setChatUsers([]);
       }
     };
     verifyUser();
   }, []);
+
+  const handleCreatePlaylist = async (name) => {
+    try {
+      const res = await apiFetch('/api/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      
+      if (res.ok) {
+        const newPlaylist = await res.json();
+        setUserPlaylists([...userPlaylists, newPlaylist]);
+        return newPlaylist;
+      } else {
+        console.error('Error creando playlist');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error creando playlist:', error);
+      return null;
+    }
+  };
+
+  const handleAddToPlaylist = async (playlistId, songTitle) => {
+    try {
+      const res = await apiFetch(`/api/playlists/${playlistId}/songs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songTitle })
+      });
+      
+      if (res.ok) {
+        return true;
+      } else {
+        console.error('Error agregando canción a playlist');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error agregando canción a playlist:', error);
+      return false;
+    }
+  };
+
+  const handleDeletePlaylist = async (playlistId) => {
+    try {
+      const res = await apiFetch(`/api/playlists/${playlistId}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        setUserPlaylists(userPlaylists.filter(p => p.id !== playlistId));
+        return true;
+      } else {
+        console.error('Error eliminando playlist');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error eliminando playlist:', error);
+      return false;
+    }
+  };
+
+  const loadChatUsers = async () => {
+    try {
+      const res = await apiFetch('/api/users');
+      if (res.ok) {
+        const users = await res.json();
+        setChatUsers(users);
+      }
+    } catch (error) {
+      console.error('Error cargando usuarios:', error);
+    }
+  };
+
+  const loadUserPlaylists = async () => {
+    try {
+      const res = await apiFetch('/api/playlists');
+      if (res.ok) {
+        const playlists = await res.json();
+        setUserPlaylists(playlists);
+      }
+    } catch (error) {
+      console.error('Error cargando playlists:', error);
+    }
+  };
   
 
   const musicFiles = [
@@ -388,9 +483,17 @@ export default function App() {
                 <a href="https://ytmp3.nu/" target="_blank" rel="noopener noreferrer" className="boton-principal">🎧 Convertir YouTube a MP3</a>
 
                 <a href="https://www.snaptubeapp.com/" target="_blank" rel="noopener noreferrer" className="extra-btn">📂 Descargar SnapTube Android</a>
-
-                <button className="boton-principal" onClick={() => alert('Funcionalidad de crear playlist en proceso')}>➕ Crear Playlist</button>
               </div>
+
+              {user && (
+                <PlaylistManager 
+                  userPlaylists={userPlaylists}
+                  onCreatePlaylist={handleCreatePlaylist}
+                  onDeletePlaylist={handleDeletePlaylist}
+                  onAddToPlaylist={handleAddToPlaylist}
+                  currentSong={currentSong}
+                />
+              )}
 
               <input
                 id="cargaInput"
@@ -449,8 +552,21 @@ export default function App() {
             <h2>Chats</h2>
             <div className="chat-container">
               <div className="chat-list">
-                <div className="chat-user" onClick={() => setActiveUser("Pipi")}><span>usuario1</span></div>
-                <div className="chat-user" onClick={() => setActiveUser("Lucho")}><span>usuario2</span></div>
+                {chatUsers.length > 0 ? (
+                  chatUsers.map(chatUser => (
+                    <div 
+                      key={chatUser.id} 
+                      className="chat-user" 
+                      onClick={() => setActiveUser(chatUser.username)}
+                    >
+                      <span>{chatUser.username}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-users">
+                    <p>No hay otros usuarios registrados aún</p>
+                  </div>
+                )}
               </div>
 
               <div className="chat-window">
