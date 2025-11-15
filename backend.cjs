@@ -180,6 +180,7 @@ app.get('/api/playlists', requireAuth, (req, res) => {
 
 app.post('/api/playlists', requireAuth, (req, res) => {
   try {
+    console.log('📝 Creando playlist - Usuario:', req.user.nombre, '- Datos:', req.body);
     const { name } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Nombre de playlist requerido' });
@@ -187,8 +188,10 @@ app.post('/api/playlists', requireAuth, (req, res) => {
     const info = db.prepare('INSERT INTO playlists (name, user_id) VALUES (?, ?)')
       .run(name.trim(), req.user.id);
     const playlist = db.prepare('SELECT * FROM playlists WHERE id = ?').get(info.lastInsertRowid);
+    console.log('✅ Playlist creada:', playlist);
     res.json(playlist);
   } catch (e) {
+    console.error('❌ Error creando playlist:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

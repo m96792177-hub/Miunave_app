@@ -17,6 +17,36 @@ export default function App() {
   const [chatUsers, setChatUsers] = useState([]);
   const [showPlaylistManager, setShowPlaylistManager] = useState(false);
 
+  const loadChatUsers = async () => {
+    try {
+      const res = await apiFetch('/api/users');
+      if (res.ok) {
+        const users = await res.json();
+        setChatUsers(users);
+      }
+    } catch (error) {
+      console.error('Error cargando usuarios:', error);
+    }
+  };
+
+  const loadUserPlaylists = async () => {
+    try {
+      const res = await apiFetch('/api/playlists');
+      if (res.ok) {
+        const playlists = await res.json();
+        setUserPlaylists(playlists);
+      }
+    } catch (error) {
+      console.error('Error cargando playlists:', error);
+    }
+  };
+
+  const handleLogin = async (userData) => {
+    setUser(userData);
+    await loadUserPlaylists();
+    await loadChatUsers();
+  };
+
   useEffect(() => {
     const verifyUser = async () => {
       try {
@@ -40,6 +70,18 @@ export default function App() {
     };
     verifyUser();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await apiFetch('/api/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Error en logout:', error);
+    } finally {
+      setUser(null);
+      setUserPlaylists([]);
+      setChatUsers([]);
+    }
+  };
 
   const handleCreatePlaylist = async (name) => {
     try {
@@ -102,29 +144,6 @@ export default function App() {
     }
   };
 
-  const loadChatUsers = async () => {
-    try {
-      const res = await apiFetch('/api/users');
-      if (res.ok) {
-        const users = await res.json();
-        setChatUsers(users);
-      }
-    } catch (error) {
-      console.error('Error cargando usuarios:', error);
-    }
-  };
-
-  const loadUserPlaylists = async () => {
-    try {
-      const res = await apiFetch('/api/playlists');
-      if (res.ok) {
-        const playlists = await res.json();
-        setUserPlaylists(playlists);
-      }
-    } catch (error) {
-      console.error('Error cargando playlists:', error);
-    }
-  };
   
 
   const musicFiles = [
@@ -628,17 +647,14 @@ export default function App() {
           <section id="perfil" className="seccion-activa">
             <h2>{user ? 'Mi Perfil' : 'Acceder'}</h2>
             {!user ? (
-              <Auth onLogin={setUser} />
+              <Auth onLogin={handleLogin} />
             ) : (
               <div className="perfil-container">
                 <div className="perfil-info">
                   <h3>Bienvenido, {user.nombre}</h3>
                   <button 
                     className="btn-buscar"
-                    onClick={() => {
-                      apiFetch('/api/logout', { method: 'POST' })
-                        .then(() => setUser(null));
-                    }}
+                    onClick={handleLogout}
                   >
                     Cerrar Sesión
                   </button>
