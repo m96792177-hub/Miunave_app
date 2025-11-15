@@ -122,7 +122,14 @@ app.get('/api/verify', (req, res) => {
     const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ','');
     if (!token) return res.status(401).json({ message: 'No autorizado' });
     const data = jwt.verify(token, JWT_SECRET);
-    return res.json({ user: data });
+
+    const userRow = db.prepare('SELECT id, nombre, email, role FROM users WHERE id = ?').get(data.id);
+    if (!userRow) {
+      console.warn('/api/verify detectó token sin usuario. Forzar re-login:', data.email);
+      return res.status(401).json({ message: 'Sesión inválida, por favor inicia sesión nuevamente' });
+    }
+
+    return res.json({ user: userRow });
   } catch (err) {
     return res.status(401).json({ message: 'Token inválido' });
   }
@@ -142,7 +149,14 @@ function requireAuth(req, res, next) {
     const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ','');
     if (!token) return res.status(401).json({ message: 'No autorizado' });
     const data = jwt.verify(token, JWT_SECRET);
-    req.user = data;
+
+    const userRow = db.prepare('SELECT id, nombre, email, role FROM users WHERE id = ?').get(data.id);
+    if (!userRow) {
+      console.warn('Token válido pero usuario no existe en BD, forzando reautenticación:', data.email);
+      return res.status(401).json({ message: 'Sesión inválida, por favor inicia sesión nuevamente' });
+    }
+
+    req.user = userRow;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'No autorizado' });
@@ -180,7 +194,7 @@ app.get('/api/playlists', requireAuth, (req, res) => {
 
 app.post('/api/playlists', requireAuth, (req, res) => {
   try {
-    console.log('📝 Creando playlist - Usuario:', req.user.nombre, '- Datos:', req.body);
+    console.log('Creando playlist - Usuario:', req.user.nombre, '- Datos:', req.body);
     const { name } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Nombre de playlist requerido' });
@@ -188,10 +202,10 @@ app.post('/api/playlists', requireAuth, (req, res) => {
     const info = db.prepare('INSERT INTO playlists (name, user_id) VALUES (?, ?)')
       .run(name.trim(), req.user.id);
     const playlist = db.prepare('SELECT * FROM playlists WHERE id = ?').get(info.lastInsertRowid);
-    console.log('✅ Playlist creada:', playlist);
+    console.log('Playlist creada:', playlist);
     res.json(playlist);
   } catch (e) {
-    console.error('❌ Error creando playlist:', e.message);
+    console.error('Error creando playlist:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -241,7 +255,6 @@ app.delete('/api/playlists/:id', requireAuth, (req, res) => {
   }
 });
 
-// Obtener lista de usuarios para chat
 app.get('/api/users', requireAuth, (req, res) => {
   try {
     const users = db.prepare('SELECT id, nombre, email FROM users WHERE id != ?')
@@ -262,7 +275,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Servidor de autenticación corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor de autenticación corriendo en http://localhost:${PORT}`);
 });
 
 module.exports = app;
