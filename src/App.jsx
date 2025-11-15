@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./styles.css";
 import Auth from "./components/Auth";
 import PlaylistManager from "./components/PlaylistManager";
-import { apiFetch } from "./api";
+import { apiFetch, API_URL } from "./api";
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(localStorage.getItem("tema") === "oscuro");
@@ -137,15 +137,33 @@ export default function App() {
 
   const handleCreatePlaylist = async (name) => {
     try {
-      console.log('🎵 Creando playlist:', name);
+      console.log('🎵 Iniciando creación de playlist:', name);
+      console.log('👤 Usuario actual:', user);
+      console.log('🌐 API URL actual:', API_URL);
+      console.log('📊 Datos a enviar:', JSON.stringify({ name }));
+      
+      if (!user) {
+        console.error('❌ No hay usuario autenticado');
+        setNotification({
+          type: 'error',
+          message: '❌ Debes iniciar sesión para crear playlists'
+        });
+        setTimeout(() => setNotification(null), 3000);
+        return null;
+      }
+
       const res = await apiFetch('/api/playlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
       });
       
+      console.log('📡 Respuesta del servidor:', res.status, res.statusText);
+      console.log('📄 URL de la petición:', `${API_URL}/api/playlists`);
+      
       if (res.ok) {
         const newPlaylist = await res.json();
+        console.log('✅ Playlist creada exitosamente:', newPlaylist);
         setUserPlaylists(prevPlaylists => [...prevPlaylists, newPlaylist]);
         
         // Mostrar notificación de éxito
@@ -160,16 +178,18 @@ export default function App() {
         console.log('✅ Playlist creada exitosamente:', newPlaylist);
         return newPlaylist;
       } else {
-        console.error('Error creando playlist:', res.status);
+        const errorData = await res.json().catch(() => ({ message: 'Error desconocido' }));
+        console.error('❌ Error del servidor:', res.status, errorData);
         setNotification({
           type: 'error',
-          message: '❌ Error al crear la playlist'
+          message: `❌ Error al crear playlist: ${errorData.message || 'Error desconocido'}`
         });
         setTimeout(() => setNotification(null), 3000);
         return null;
       }
     } catch (error) {
-      console.error('Error creando playlist:', error);
+      console.error('❌ Error en handleCreatePlaylist:', error);
+      console.error('📄 Stack trace completo:', error.stack);
       setNotification({
         type: 'error',
         message: '❌ Error de conexión al crear playlist'
@@ -181,13 +201,44 @@ export default function App() {
 
   const handleAddToPlaylist = async (playlistId, songTitle) => {
     try {
+      console.log('🎵 Agregando canción a playlist:', { playlistId, songTitle });
+      console.log('👤 Usuario actual:', user);
+      console.log('🌐 API URL actual:', API_URL);
+      console.log('📊 Datos a enviar:', JSON.stringify({ songTitle: songTitle.trim() }));
+
+      if (!user) {
+        console.error('❌ No hay usuario autenticado');
+        setNotification({
+          type: 'error',
+          message: '❌ Debes iniciar sesión para agregar canciones'
+        });
+        setTimeout(() => setNotification(null), 3000);
+        return false;
+      }
+
+      if (!songTitle || songTitle.trim() === '') {
+        console.error('❌ Nombre de canción vacío');
+        setNotification({
+          type: 'error',
+          message: '❌ Nombre de canción no válido'
+        });
+        setTimeout(() => setNotification(null), 3000);
+        return false;
+      }
+
       const res = await apiFetch(`/api/playlists/${playlistId}/songs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songTitle })
+        body: JSON.stringify({ songTitle: songTitle.trim() })
       });
       
+      console.log('📡 Respuesta del servidor (agregar canción):', res.status, res.statusText);
+      console.log('📄 URL de la petición:', `${API_URL}/api/playlists/${playlistId}/songs`);
+      
       if (res.ok) {
+        const result = await res.json();
+        console.log('✅ Canción agregada exitosamente:', result);
+        
         // Actualizar el contador de canciones en la playlist
         setUserPlaylists(prevPlaylists => 
           prevPlaylists.map(playlist => 
@@ -199,22 +250,23 @@ export default function App() {
         
         setNotification({
           type: 'success',
-          message: `🎵 Canción agregada exitosamente`
+          message: `🎵 "${songTitle}" agregada exitosamente`
         });
         setTimeout(() => setNotification(null), 3000);
         
         return true;
       } else {
-        console.error('Error agregando canción a playlist');
+        const errorData = await res.json().catch(() => ({ message: 'Error desconocido' }));
+        console.error('❌ Error del servidor al agregar canción:', res.status, errorData);
         setNotification({
           type: 'error',
-          message: '❌ Error al agregar canción a playlist'
+          message: `❌ Error al agregar canción: ${errorData.message || 'Error desconocido'}`
         });
         setTimeout(() => setNotification(null), 3000);
         return false;
       }
     } catch (error) {
-      console.error('Error agregando canción a playlist:', error);
+      console.error('❌ Error en handleAddToPlaylist:', error);
       setNotification({
         type: 'error',
         message: '❌ Error de conexión al agregar canción'
