@@ -16,6 +16,7 @@ export default function App() {
   const [userPlaylists, setUserPlaylists] = useState([]);
   const [chatUsers, setChatUsers] = useState([]);
   const [showPlaylistManager, setShowPlaylistManager] = useState(false);
+  const [notification, setNotification] = useState(null);
 
   const loadChatUsers = async () => {
     try {
@@ -100,6 +101,7 @@ export default function App() {
 
   const handleCreatePlaylist = async (name) => {
     try {
+      console.log('🎵 Creando playlist:', name);
       const res = await apiFetch('/api/playlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,14 +110,35 @@ export default function App() {
       
       if (res.ok) {
         const newPlaylist = await res.json();
-        setUserPlaylists([...userPlaylists, newPlaylist]);
+        setUserPlaylists(prevPlaylists => [...prevPlaylists, newPlaylist]);
+        
+        // Mostrar notificación de éxito
+        setNotification({
+          type: 'success',
+          message: `✅ Playlist "${name}" creada exitosamente`
+        });
+        
+        // Ocultar notificación después de 3 segundos
+        setTimeout(() => setNotification(null), 3000);
+        
+        console.log('✅ Playlist creada exitosamente:', newPlaylist);
         return newPlaylist;
       } else {
-        console.error('Error creando playlist');
+        console.error('Error creando playlist:', res.status);
+        setNotification({
+          type: 'error',
+          message: '❌ Error al crear la playlist'
+        });
+        setTimeout(() => setNotification(null), 3000);
         return null;
       }
     } catch (error) {
       console.error('Error creando playlist:', error);
+      setNotification({
+        type: 'error',
+        message: '❌ Error de conexión al crear playlist'
+      });
+      setTimeout(() => setNotification(null), 3000);
       return null;
     }
   };
@@ -397,6 +420,14 @@ export default function App() {
 
   return (
     <div className={darkMode ? "modo-oscuro" : "modo-claro"}>
+      {/* Componente de Notificaciones */}
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          <span>{notification.message}</span>
+          <button onClick={() => setNotification(null)}>✕</button>
+        </div>
+      )}
+      
       <header>
         <h1 className="titulo">MiuNave</h1>
         <div className="header-buttons">
@@ -458,6 +489,53 @@ export default function App() {
                 </div>
               ))}
             </div>
+            
+            {user && userPlaylists.length > 0 && (
+              <>
+                <h2 className="playlist-title">Mis Playlists</h2>
+                <div className="playlists-grid">
+                  {userPlaylists.map((playlist) => (
+                    <div
+                      key={`user-${playlist.id}`}
+                      className="playlist-item user-playlist"
+                      style={{ 
+                        backgroundImage: `linear-gradient(to top, rgba(138, 43, 226, 0.6), transparent), url('https://i.pinimg.com/736x/82/86/b2/8286b254915c576c20b49b6bbc265ad9.jpg')`
+                      }}
+                      role="button"
+                      aria-label={`Reproducir ${playlist.name}`}
+                      tabIndex={0}
+                      onClick={async () => {
+                        try {
+                          const res = await apiFetch(`/api/playlists/${playlist.id}/songs`);
+                          if (res.ok) {
+                            const data = await res.json();
+                            const songPaths = data.songs?.map(song => song.song_path) || [];
+                            setPlaylistActiva(playlist.name);
+                            setCanciones(songPaths);
+                            if (songPaths.length > 0) {
+                              playSong(0);
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error cargando playlist:', error);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.click();
+                        }
+                      }}
+                    >
+                      <button className="play-btn" aria-hidden="true">▶</button>
+                      <span>{playlist.name}</span>
+                      <small style={{ position: 'absolute', bottom: '30px', right: '10px', fontSize: '12px', opacity: 0.8 }}>
+                        {playlist.song_count || 0} canción{(playlist.song_count || 0) !== 1 ? 'es' : ''}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
         )}
 
