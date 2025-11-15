@@ -115,11 +115,11 @@ export default function App() {
         // Mostrar notificación de éxito
         setNotification({
           type: 'success',
-          message: `✅ Playlist "${name}" creada exitosamente`
+          message: `✅ Playlist "${name}" creada exitosamente. Ahora puedes agregarle canciones desde la sección Perfil.`
         });
         
-        // Ocultar notificación después de 3 segundos
-        setTimeout(() => setNotification(null), 3000);
+        // Ocultar notificación después de 4 segundos (más tiempo para leer el mensaje completo)
+        setTimeout(() => setNotification(null), 4000);
         
         console.log('✅ Playlist creada exitosamente:', newPlaylist);
         return newPlaylist;
@@ -152,13 +152,38 @@ export default function App() {
       });
       
       if (res.ok) {
+        // Actualizar el contador de canciones en la playlist
+        setUserPlaylists(prevPlaylists => 
+          prevPlaylists.map(playlist => 
+            playlist.id === playlistId 
+              ? { ...playlist, song_count: (playlist.song_count || 0) + 1 }
+              : playlist
+          )
+        );
+        
+        setNotification({
+          type: 'success',
+          message: `🎵 Canción agregada exitosamente`
+        });
+        setTimeout(() => setNotification(null), 3000);
+        
         return true;
       } else {
         console.error('Error agregando canción a playlist');
+        setNotification({
+          type: 'error',
+          message: '❌ Error al agregar canción a playlist'
+        });
+        setTimeout(() => setNotification(null), 3000);
         return false;
       }
     } catch (error) {
       console.error('Error agregando canción a playlist:', error);
+      setNotification({
+        type: 'error',
+        message: '❌ Error de conexión al agregar canción'
+      });
+      setTimeout(() => setNotification(null), 3000);
       return false;
     }
   };
@@ -171,13 +196,28 @@ export default function App() {
       
       if (res.ok) {
         setUserPlaylists(userPlaylists.filter(p => p.id !== playlistId));
+        setNotification({
+          type: 'success',
+          message: '🗑️ Playlist eliminada exitosamente'
+        });
+        setTimeout(() => setNotification(null), 3000);
         return true;
       } else {
         console.error('Error eliminando playlist');
+        setNotification({
+          type: 'error',
+          message: '❌ Error al eliminar playlist'
+        });
+        setTimeout(() => setNotification(null), 3000);
         return false;
       }
     } catch (error) {
       console.error('Error eliminando playlist:', error);
+      setNotification({
+        type: 'error',
+        message: '❌ Error de conexión al eliminar playlist'
+      });
+      setTimeout(() => setNotification(null), 3000);
       return false;
     }
   };
@@ -451,7 +491,7 @@ export default function App() {
                 }} 
                 title="Cerrar sesión"
               >
-                {"🚪"}
+                {"Salir"}
               </button>
             </>
           )}
@@ -514,10 +554,21 @@ export default function App() {
                             setCanciones(songPaths);
                             if (songPaths.length > 0) {
                               playSong(0);
+                            } else {
+                              setNotification({
+                                type: 'error',
+                                message: `📝 La playlist "${playlist.name}" está vacía. Agrega canciones desde la sección Perfil.`
+                              });
+                              setTimeout(() => setNotification(null), 4000);
                             }
                           }
                         } catch (error) {
                           console.error('Error cargando playlist:', error);
+                          setNotification({
+                            type: 'error',
+                            message: '❌ Error al cargar la playlist'
+                          });
+                          setTimeout(() => setNotification(null), 3000);
                         }
                       }}
                       onKeyDown={(e) => {
@@ -526,10 +577,14 @@ export default function App() {
                         }
                       }}
                     >
-                      <button className="play-btn" aria-hidden="true">▶</button>
+                      <button className="play-btn" aria-hidden="true">
+                        {(playlist.song_count || 0) > 0 ? '▶' : '📝'}
+                      </button>
                       <span>{playlist.name}</span>
                       <small style={{ position: 'absolute', bottom: '30px', right: '10px', fontSize: '12px', opacity: 0.8 }}>
                         {playlist.song_count || 0} canción{(playlist.song_count || 0) !== 1 ? 'es' : ''}
+                        {(playlist.song_count || 0) === 0 && <br />}
+                        {(playlist.song_count || 0) === 0 && <span style={{ fontSize: '10px' }}>Vacía</span>}
                       </small>
                     </div>
                   ))}
