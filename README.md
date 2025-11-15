@@ -1,16 +1,16 @@
-# 🎵 MiuNave App
+# MiuNave App
 
 **Aplicación de música completa con React + Node.js**
 
-## 🌐 ENLACES DIRECTOS
+## ENLACES DIRECTOS
 
-### **🚀 APP EN VIVO:** https://fantastic-haupia-47b632.netlify.app
-### **🖥️ API BACKEND:** https://miunave-backend.onrender.com  
-### **📂 REPOSITORIO:** https://github.com/m96792177-hub/Miunave_app
+### **APP EN VIVO:** https://fantastic-haupia-47b632.netlify.app
+### **API BACKEND:** https://miunave-backend.onrender.com  
+### **REPOSITORIO:** https://github.com/m96792177-hub/Miunave_app
 
 ---
 
-## ⚡ INICIO RÁPIDO
+## INICIO RÁPIDO
 
 ### Desarrollo Local:
 ```bash
@@ -33,21 +33,21 @@ npm run dev
 
 ---
 
-## 🎯 CARACTERÍSTICAS
+## CARACTERÍSTICAS
 
-### 🎵 Reproductor:
+### Reproductor:
 - Playlists por género
 - Controles completos
 - Ecualizador 3 bandas
 - Carga archivos locales
 
-### 👤 Autenticación:
+### Autenticación:
 - Registro/Login JWT
 - Sesión persistente  
 - Cookies seguras
 - Roles usuario/admin
 
-### 🎨 Interfaz:
+### Interfaz:
 - Modo claro/oscuro
 - Diseño responsive
 - Chat entre usuarios
@@ -55,7 +55,7 @@ npm run dev
 
 ---
 
-## 🛠️ TECNOLOGÍAS
+## TECNOLOGÍAS
 
 **Frontend:** React 18 + Vite + CSS3  
 **Backend:** Node.js + Express + SQLite  
@@ -64,19 +64,19 @@ npm run dev
 
 ---
 
-## 📋 DOCUMENTACIÓN
+## DOCUMENTACIÓN
 
 - `USAGE_GUIDE.md` - Guía completa de uso
 - `DEPLOYMENT_SUCCESS.md` - Info de despliegue
 
 ---
 
-## ✅ CUMPLE REQUISITOS
+## CUMPLE REQUISITOS
 
-- ✅ React + JavaScript
-- ✅ Base de datos (SQLite)  
-- ✅ Sistema autenticación
-- ✅ Hosting funcional
-- ✅ Repositorio público
+- React + JavaScript
+- Base de datos (SQLite)  
+- Sistema autenticación
+- Hosting funcional
+- Repositorio público
 
-**🎖️ Proyecto académico completado - Noviembre 2025**
+**Proyecto académico completado - Noviembre 2025**
