@@ -23,9 +23,14 @@ export default function App() {
       if (res.ok) {
         const users = await res.json();
         setChatUsers(users);
+        console.log('✅ Usuarios cargados:', users.length);
+      } else {
+        console.warn('⚠️ Error cargando usuarios:', res.status, res.statusText);
+        setChatUsers([]);
       }
     } catch (error) {
-      console.error('Error cargando usuarios:', error);
+      console.error('❌ Error cargando usuarios:', error);
+      setChatUsers([]);
     }
   };
 
@@ -35,16 +40,26 @@ export default function App() {
       if (res.ok) {
         const playlists = await res.json();
         setUserPlaylists(playlists);
+        console.log('✅ Playlists cargadas:', playlists.length);
+      } else {
+        console.warn('⚠️ Error cargando playlists:', res.status, res.statusText);
+        setUserPlaylists([]);
       }
     } catch (error) {
-      console.error('Error cargando playlists:', error);
+      console.error('❌ Error cargando playlists:', error);
+      setUserPlaylists([]);
     }
   };
 
   const handleLogin = async (userData) => {
+    console.log('🔐 Iniciando proceso de login para:', userData.nombre);
     setUser(userData);
-    await loadUserPlaylists();
-    await loadChatUsers();
+    try {
+      await Promise.all([loadUserPlaylists(), loadChatUsers()]);
+      console.log('✅ Login completado exitosamente');
+    } catch (error) {
+      console.error('❌ Error durante el proceso de login:', error);
+    }
   };
 
   useEffect(() => {

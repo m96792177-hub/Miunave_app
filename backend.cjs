@@ -130,7 +130,7 @@ app.get('/api/verify', (req, res) => {
 
 app.get('/api/chat-users', requireAuth, (req, res) => {
   try {
-    const users = db.prepare('SELECT id, username FROM users WHERE id != ?').all(req.user.id);
+    const users = db.prepare('SELECT id, nombre FROM users WHERE id != ?').all(req.user.id);
     res.json(users);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -259,7 +259,7 @@ app.delete('/api/playlists/:id', requireAuth, (req, res) => {
 // Obtener lista de usuarios para chat
 app.get('/api/users', requireAuth, (req, res) => {
   try {
-    const users = db.prepare('SELECT id, username, email FROM users WHERE id != ?')
+    const users = db.prepare('SELECT id, nombre, email FROM users WHERE id != ?')
       .all(req.user.id);
     res.json(users);
   } catch (e) {
