@@ -491,7 +491,7 @@ export default function App() {
                   onCreatePlaylist={handleCreatePlaylist}
                   onDeletePlaylist={handleDeletePlaylist}
                   onAddToPlaylist={handleAddToPlaylist}
-                  currentSong={currentSong}
+                  currentSong={canciones[currentIndex]}
                 />
               )}
 
