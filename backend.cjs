@@ -228,21 +228,6 @@ app.post('/api/playlists/:id/songs', requireAuth, (req, res) => {
   }
 });
 
-app.get('/api/playlists/:id/songs', requireAuth, (req, res) => {
-  try {
-    const playlist = db.prepare('SELECT * FROM playlists WHERE id = ? AND user_id = ?')
-      .get(req.params.id, req.user.id);
-    if (!playlist) {
-      return res.status(404).json({ error: 'Playlist no encontrada' });
-    }
-    const songs = db.prepare('SELECT * FROM playlist_songs WHERE playlist_id = ?')
-      .all(req.params.id);
-    res.json(songs);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 app.delete('/api/playlists/:id', requireAuth, (req, res) => {
   try {
     const result = db.prepare('DELETE FROM playlists WHERE id = ? AND user_id = ?')

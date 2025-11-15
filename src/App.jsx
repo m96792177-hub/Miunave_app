@@ -17,6 +17,8 @@ export default function App() {
   const [chatUsers, setChatUsers] = useState([]);
   const [showPlaylistManager, setShowPlaylistManager] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [showCreatePlaylistModal, setShowCreatePlaylistModal] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
 
   const loadChatUsers = async () => {
     try {
@@ -96,6 +98,40 @@ export default function App() {
       setUser(null);
       setUserPlaylists([]);
       setChatUsers([]);
+    }
+  };
+
+  const openCreatePlaylistModal = () => {
+    setShowCreatePlaylistModal(true);
+    setNewPlaylistName('');
+  };
+
+  const closeCreatePlaylistModal = () => {
+    setShowCreatePlaylistModal(false);
+    setNewPlaylistName('');
+  };
+
+  const handleCreatePlaylistFromModal = async (e) => {
+    e.preventDefault();
+    if (!newPlaylistName.trim()) {
+      setNotification({
+        type: 'error',
+        message: '❌ El nombre de la playlist es requerido'
+      });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    const result = await handleCreatePlaylist(newPlaylistName.trim());
+    if (result) {
+      closeCreatePlaylistModal();
+      // Redirigir automáticamente a inicio
+      setActiveSection('inicio');
+      setNotification({
+        type: 'success',
+        message: `🎵 Playlist "${newPlaylistName}" creada y lista para agregar canciones`
+      });
+      setTimeout(() => setNotification(null), 4000);
     }
   };
 
@@ -467,6 +503,41 @@ export default function App() {
           <button onClick={() => setNotification(null)}>✕</button>
         </div>
       )}
+
+      {/* Modal para crear playlist */}
+      {showCreatePlaylistModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>🎵 Crear Nueva Playlist</h3>
+              <button className="modal-close" onClick={closeCreatePlaylistModal}>✕</button>
+            </div>
+            <form onSubmit={handleCreatePlaylistFromModal} className="modal-form">
+              <div className="input-group">
+                <label htmlFor="playlistName">Nombre de la Playlist:</label>
+                <input
+                  id="playlistName"
+                  type="text"
+                  value={newPlaylistName}
+                  onChange={(e) => setNewPlaylistName(e.target.value)}
+                  placeholder="Ej: Mi música favorita"
+                  maxLength={50}
+                  autoFocus
+                  className="input-busqueda"
+                />
+              </div>
+              <div className="modal-buttons">
+                <button type="button" className="btn-cancel" onClick={closeCreatePlaylistModal}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-create">
+                  ✅ Crear Playlist
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       
       <header>
         <h1 className="titulo">MiuNave</h1>
@@ -549,7 +620,8 @@ export default function App() {
                           const res = await apiFetch(`/api/playlists/${playlist.id}/songs`);
                           if (res.ok) {
                             const data = await res.json();
-                            const songPaths = data.songs?.map(song => song.song_path) || [];
+                            console.log('📊 Datos recibidos de playlist:', data);
+                            const songPaths = (data.songs || data)?.map(song => song.song_path) || [];
                             setPlaylistActiva(playlist.name);
                             setCanciones(songPaths);
                             if (songPaths.length > 0) {
@@ -647,6 +719,12 @@ export default function App() {
                   🎵 Cargar Canciones MP3
                 </button>
 
+                {user && (
+                  <button className="boton-principal" onClick={openCreatePlaylistModal}>
+                    ➕ Crear Nueva Playlist
+                  </button>
+                )}
+
                 <a href="https://ytmp3.nu/" target="_blank" rel="noopener noreferrer" className="boton-principal">🎧 Convertir YouTube a MP3</a>
 
                 <a href="https://www.snaptubeapp.com/" target="_blank" rel="noopener noreferrer" className="extra-btn">📂 Descargar SnapTube Android</a>
@@ -690,23 +768,48 @@ export default function App() {
               {cancionesLocales
                 .filter((c) => c.nombre.toLowerCase().includes(busqueda.toLowerCase()))
                 .map((cancion, index) => (
-                  <li key={index}>
-                    <span onClick={() => {
-                      setPlaylistActiva("Locales");
-                      setCanciones(cancionesLocales.map((c) => c.url));
-                      playSong(index);
-                    }}
-                    >
-                      🎵 {cancion.nombre}
-                    </span>
-                    <button
-                      className="btn-eliminar"
-                      onClick={() =>
-                        setCancionesLocales(cancionesLocales.filter((_, i) => i !== index))
-                      }
-                    >
-                      🗑
-                    </button>
+                  <li key={index} className="cancion-local-item">
+                    <div className="cancion-info">
+                      <span 
+                        className="cancion-nombre"
+                        onClick={() => {
+                          setPlaylistActiva("Locales");
+                          setCanciones(cancionesLocales.map((c) => c.url));
+                          playSong(index);
+                        }}
+                      >
+                        🎵 {cancion.nombre}
+                      </span>
+                    </div>
+                    <div className="cancion-acciones">
+                      {user && userPlaylists.length > 0 && (
+                        <select 
+                          className="playlist-selector"
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleAddToPlaylist(parseInt(e.target.value), cancion.nombre);
+                              e.target.value = '';
+                            }
+                          }}
+                        >
+                          <option value="">➕ Agregar a playlist</option>
+                          {userPlaylists.map(playlist => (
+                            <option key={playlist.id} value={playlist.id}>
+                              {playlist.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <button
+                        className="btn-eliminar"
+                        onClick={() =>
+                          setCancionesLocales(cancionesLocales.filter((_, i) => i !== index))
+                        }
+                        title="Eliminar canción"
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </li>
                 ))}
               {cancionesLocales.length === 0 && <li>No hay canciones cargadas</li>}
@@ -812,14 +915,9 @@ export default function App() {
                   <h3>Mis Playlists</h3>
                   <button 
                     className="extra-btn"
-                    onClick={() => {
-                      const nombre = prompt('Nombre de la nueva playlist:');
-                      if (nombre) {
-                        
-                      }
-                    }}
+                    onClick={openCreatePlaylistModal}
                   >
-                    Crear Nueva Playlist
+                    ➕ Crear Nueva Playlist
                   </button>
                 </div>
               </div>

@@ -68,7 +68,9 @@ const PlaylistManager = ({ userPlaylists, onCreatePlaylist, onDeletePlaylist, on
         try {
           const response = await apiFetch(`/api/playlists/${playlistId}/songs`);
           if (response.ok) {
-            const songs = await response.json();
+            const data = await response.json();
+            console.log('📊 Datos de playlist en manager:', data);
+            const songs = data.songs || data || [];
             setPlaylistSongs(prev => ({ ...prev, [playlistId]: songs }));
           }
         } catch (error) {
