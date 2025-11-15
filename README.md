@@ -69,14 +69,4 @@ npm run dev
 - `USAGE_GUIDE.md` - Guía completa de uso
 - `DEPLOYMENT_SUCCESS.md` - Info de despliegue
 
----
-
-## CUMPLE REQUISITOS
-
-- React + JavaScript
-- Base de datos (SQLite)  
-- Sistema autenticación
-- Hosting funcional
-- Repositorio público
-
 **Proyecto académico completado - Noviembre 2025**
